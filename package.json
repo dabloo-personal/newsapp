@@ -1,0 +1,21 @@
+{
+  "name": "navbharat-24x7",
+  "private": true,
+  "description": "Navbharat 24x7 — Hindi news portal (MongoDB, Express, React, Node) with Redux Toolkit",
+  "workspaces": [
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web -c blue,green \"npm run dev -w server\" \"npm run dev -w client\"",
+    "seed": "npm run seed -w server",
+    "build": "npm run build -w client && npm run prepare-db -w server",
+    "start": "npm start -w server"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

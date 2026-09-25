@@ -1,0 +1,26 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "seed": "node src/seed/seed.js",
+    "prepare-db": "node scripts/download-embedded-db.mjs"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.0.0",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.0.0",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.9.0",
+    "morgan": "^1.10.0"
+  },
+  "optionalDependencies": {
+    "mongodb-memory-server": "^11.3.0"
+  }
+}

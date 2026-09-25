@@ -1,0 +1,21 @@
+# Render Blueprint: one web service serving the API and the built React app.
+services:
+  - type: web
+    name: navbharat24x7
+    runtime: node
+    plan: free
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 22
+      # Stable secret so logins survive restarts (generated once by Render).
+      - key: JWT_SECRET
+        generateValue: true
+      # Render asks for this when you create the service: it is the admin login password.
+      - key: ADMIN_PASSWORD
+        sync: false
+      # Leave MONGODB_URI unset for now (embedded demo database). Add it later in the dashboard.
