@@ -1,66 +1,84 @@
-# नवभारत 24x7 — Hindi news portal (MERN + Redux Toolkit)
+# नवभारत 24x7 — Hindi + English news portal (MERN + Redux Toolkit)
 
 MongoDB · Express · React · Node, with Redux Toolkit for client state.
 
-## Run it
+## Run it locally
 
-Requires Node 20+. With `MONGODB_URI` empty the app uses an embedded database and seeds itself; to use a local MongoDB set `MONGODB_URI=mongodb://127.0.0.1:27017/navbharat24x7` and run `npm run seed` once.
+Requires Node 20+ and a MongoDB (local, or a MongoDB Atlas connection string).
 
 ```bash
 npm install
-cp server/.env.example server/.env   # see comments in the file
-npm run dev                          # API :5001 + web :5173
+cp server/.env.example server/.env    # set MONGODB_URI (see the comments in the file)
+npm run setup                         # creates the admin account + categories (deletes nothing)
+npm run dev                           # API :5001 + web :5173
 ```
 
 Open http://localhost:5173.
 
-Admin login (created by the seed, change it in `server/.env` before seeding): `admin@navbharat.local` / `Admin@12345`
+Want demo stories? On an **empty** database run `npm run seed` (31 fictional stories, Hindi + English). It refuses to run if articles already exist; replacing them needs `npm run seed -w server -- --force`.
 
-## Deploy
+## Environment (`server/.env`)
 
-One Node service serves both the React build and the API from a single URL.
+| Variable | Required | Notes |
+| --- | --- | --- |
+| `MONGODB_URI` | **yes** | Your MongoDB connection string. The server will not start without it. |
+| `JWT_SECRET` | production | `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` |
+| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | for `setup` | First admin login. In production choose a strong password (min. 8 chars); if empty, `setup` prints a random one once. |
+| `CLIENT_ORIGIN` | if site and API are on different domains | Comma-separated list, e.g. `https://your-site.netlify.app` |
+| `PORT`, `JWT_EXPIRES_IN` | no | Defaults `5001`, `7d` |
+| `AUTO_SEED` | no | `true` = fill an empty DB with the sample stories on start. Not for a real site. |
+| `DEV_SIMPLE_ADMIN` | no | **Local only**: allows login ID `admin` with a short password. Ignored when `NODE_ENV=production`. |
 
-| Setting | Value |
-| --- | --- |
-| Build command | `npm install --include=dev && npm run build` |
-| Start command | `npm start` |
-| Environment | `NODE_ENV=production` (and `PORT` if the host doesn't set it) |
-| Host type | A long-running Node host: Render, Railway, Fly.io, a VPS. **Not** serverless (Vercel/Netlify functions). |
+## Go live (server and client separately)
 
-### No MongoDB connection string yet?
+Server (API) → **Render**. Client (React site) → **Netlify**. MongoDB → **Atlas**.
 
-Deploy anyway — leave `MONGODB_URI` unset. The app then runs an **embedded MongoDB** inside the server process and seeds it with the sample stories, so the whole site works (browse, search, EN/HI, login, comments, editorial panel).
+### 1. MongoDB Atlas
+*Database Access*: a user with read/write → *Network Access*: allow `0.0.0.0/0` (Render's IPs change) → *Connect → Drivers* and copy the string. Put the real password in and add the database name before the `?`:
 
-- Data is **temporary**: every restart/redeploy wipes accounts, comments, saved stories and edits and re-seeds.
-  To keep data without a connection string, mount a persistent disk and set `EMBEDDED_DB_PATH=/path/on/disk`.
-- First start downloads the MongoDB binary (~77 MB) and uses roughly 200–300 MB RAM — check your plan's limits.
-- In production there is no default admin password. Leave `ADMIN_PASSWORD` empty and read the generated one in the server log at first start (`Admin created: … password: …`), or set `ADMIN_PASSWORD` yourself.
-- `JWT_SECRET` is optional in this mode (a random one is used, so logins end on restart). Setting it is still good practice.
-- `GET /api/health` shows which database is active: `{"ok":true,"db":"embedded"}`.
+`mongodb+srv://<user>:<password>@cluster0.xxxxx.mongodb.net/navbharat24x7?appName=Cluster0`
 
-### When you have a connection string
+If the password has special characters (`@ : / # ?`), URL-encode them (`@` → `%40`).
 
-1. Set `MONGODB_URI` (e.g. your MongoDB Atlas URL) and a real `JWT_SECRET`. Redeploy.
-2. The database starts empty. Either set `AUTO_SEED=true` once (seeds the sample content + admin when there are no categories), or run `npm run seed` locally with the same `MONGODB_URI`. Then remove `AUTO_SEED`.
-3. `/api/health` now reports `"db":"mongodb"`. Nothing else changes; data from the embedded database is not migrated (it was demo data).
+### 2. Server on Render
+*New + → Blueprint* → pick this repo (it reads `render.yaml`). Render asks for:
+- `MONGODB_URI` — the Atlas string
+- `CLIENT_ORIGIN` — your Netlify URL (enter a placeholder now, correct it after step 4)
 
-Atlas tip: allow your host's outbound IPs (or `0.0.0.0/0` while testing) under Network Access.
+(`JWT_SECRET` is generated for you.) Then open `https://<service>.onrender.com/api/health` → `{"ok":true,"db":"connected"}`.
+Without a Blueprint: *New + → Web Service*, build `npm install -w server`, start `npm start`, plus `NODE_ENV=production` and the variables above.
 
-> Seed content is fictional sample text. `npm run seed` (needs `MONGODB_URI`) resets articles, categories and comments; users are kept.
+### 3. Create the admin login and categories (once)
+The Atlas database is empty. On your computer, in `server/.env` set the real `MONGODB_URI` and a strong `ADMIN_PASSWORD` (min. 8 characters), then:
+
+```bash
+npm run setup
+```
+
+It creates the admin (`admin@navbharat.local`, or your `ADMIN_EMAIL`) and the 11 categories. Safe to run again; it deletes nothing. Do **not** run `npm run seed` on the live database (that is for fictional demo stories).
+
+### 4. Client on Netlify
+*Add new site → Import from Git* → this repo (`netlify.toml` has the build settings). Add the environment variable
+`VITE_API_URL = https://<your-render-service>.onrender.com/api` and deploy. Then go back to Render and set `CLIENT_ORIGIN` to the Netlify URL (no trailing slash needed) — otherwise the browser blocks the API responses.
+
+### Before you announce it
+- Log in on the site with the admin from step 3 and publish your first stories (Hindi, plus English if you want).
+- Never set `DEV_SIMPLE_ADMIN` on a server (it is also ignored for non-local databases).
+- Free Render instances sleep when idle: the first visit after a pause takes about a minute.
 
 ## Features
 
-- Editorial homepage: hero, ticker (auto-rotating, refreshed every 45 s), latest, trending, per-category sections, spotlight
-- Category pages with "load more", full search page, search-as-you-type overlay (debounced, race-safe)
-- Article page: reading time, views, share, bookmark, related stories, comments
-- Auth (JWT): register / login / session restore; bookmarks per user; comments (own or editor/admin can delete)
-- Editorial panel (`editor` / `admin` roles): stats, list with status filter + search, create / edit / delete, draft vs published, breaking / featured flags
+- Editorial homepage: hero, 3 side stories, latest, trending, per-category sections, spotlight, auto-rotating breaking ticker; the page refreshes itself every 60 s and the ticker every 45 s (a new breaking story jumps to the front)
+- Category pages with "show more", full search page, search-as-you-type overlay (debounced, race-safe)
+- Article page: reading time, views, share (copies the link; native share sheet on phones), save, related stories, comments
+- Auth (JWT): register / login / session restore; saved stories per user; comments (own, or editor/admin can delete)
+- Editorial panel (`editor` / `admin`): stats, list with status filter + search + paging, create / edit / delete, draft vs published, breaking / featured flags, Hindi + English versions
 - **Hindi + English**: Hindi is the default; the switch is in the top bar (and the mobile drawer) and is remembered in the browser. It changes the whole UI, dates/numbers, category names, stories, search suggestions and server error messages. A story without an English version falls back to Hindi with a small notice.
-- Responsive (phone, tablet, desktop; mobile drawer nav), Hindi typography, image fallback tiles
+- Responsive (phone, tablet, desktop; mobile drawer nav), newspaper typography (Playfair Display + Martel for headlines, DM Sans + Mukta for text), image fallback tiles
 
 ## Languages
 
-- **UI text:** Hindi is the source language. In code write `t('होम')`; the English text lives in `client/src/i18n/en.js`. Module-level constants use `msgid('…')`. `npm run i18n:check -w client` (also part of `npm run build`) fails on a missing English entry or Devanagari text left outside `t()`.
+- **UI text:** Hindi is the source language. In code write `t('होम')`; the English text lives in `client/src/i18n/en.js`. Module-level constants use `msgid('…')`. `npm run i18n:check -w client` (also run by `npm run build`) fails on a missing English entry or Devanagari text left outside `t()`.
 - **Content:** Hindi fields are the base; an optional `en` block on each article (title, summary, body, image description, tags) and `nameEn` on each category hold the English version. The editorial panel has both forms. English needs title + summary + body together.
 - **API:** every request carries `?lang=hi|en` (default `hi`); the server returns localised content and messages. Search matches both languages.
 
@@ -68,23 +86,29 @@ Atlas tip: allow your host's outbound IPs (or `0.0.0.0/0` while testing) under N
 
 ```
 server/src
-  config/       env + Mongo connection
+  config/       env (validated at start) + Mongo connection
   models/       User, Category, Article, Comment (Mongoose)
   controllers/  auth, article, category, comment, bookmark
   middleware/   auth (protect / restrictTo / optionalAuth), error handler
   routes/       /api router
-  seed/         sample data + seed script
+  utils/        i18n (server messages), localize (content), slug, HttpError
+  seed/         sample data, `setup` (admin + categories), `seed` (sample stories)
 client/src
   app/          store, apiThunk helper
   features/     Redux slices: auth, articles, categories, bookmarks, comments, admin, ui
+  i18n/         t()/useI18n, language state, en.js dictionary
   components/   layout, cards, buttons, feedback
   pages/        Home, Category, Search, Article, Login/Register, Bookmarks, Admin, ArticleEditor
+  styles/       base.css (original design), app.css (components + typography)
+client/scripts/check-i18n.mjs
+render.yaml · netlify.toml
 ```
 
 ## API
 
 | Method | Path | Access |
 | --- | --- | --- |
+| GET | `/api/health` | public (503 if MongoDB is unreachable) |
 | POST | `/api/auth/register`, `/api/auth/login` | public (rate-limited) |
 | GET | `/api/auth/me` | user |
 | GET | `/api/categories` | public |
@@ -96,8 +120,11 @@ client/src
 | GET / POST / DELETE | `/api/comments/:articleId`, `/api/comments/item/:id` | read: public · write: user |
 | GET / POST | `/api/bookmarks`, `/api/bookmarks/:articleId` (toggle) | user |
 
+All endpoints accept `?lang=hi|en`.
+
 ## Notes
 
 - Public sign-ups are always the `user` role; editors/admins are set in the database.
-- Search uses escaped case-insensitive regex over title, summary, tags and author — fine for thousands of articles; switch to an Atlas Search / text index if the archive grows large.
-- Reader-facing images are hot-linked (Unsplash / picsum in the seed); the editor takes an image URL rather than handling uploads.
+- Search uses escaped case-insensitive regex over title, summary, tags and author in both languages — fine for thousands of articles; move to Atlas Search / a text index if the archive grows large.
+- Images are hot-linked (the sample stories use Unsplash / picsum); the editor takes an image URL rather than handling uploads.
+- Sample stories are fictional.

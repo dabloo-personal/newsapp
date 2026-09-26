@@ -7,12 +7,14 @@ import { User } from '../models/User.js';
 import { categories, articles } from './data.js';
 import { articlesEn, categoryNamesEn } from './data.en.js';
 
-async function ensureAdmin() {
+export async function ensureAdmin() {
   const existing = await User.findOne({ email: env.adminEmail });
   if (existing) return { admin: existing, created: false };
 
   const password = env.adminPassword || crypto.randomBytes(9).toString('base64url');
-  const admin = await User.create({ name: 'Admin', email: env.adminEmail, password, role: 'admin' });
+  // Only the opt-in local shortcut may skip the 8-character password rule.
+  const admin = new User({ name: 'Admin', email: env.adminEmail, password, role: 'admin' });
+  await admin.save({ validateBeforeSave: !env.simpleAdmin });
   // Printed only when we invented the password, so it isn't lost.
   console.log(`Admin created: ${env.adminEmail}${env.adminPassword ? '' : `  password: ${password}  (set ADMIN_PASSWORD to choose your own)`}`);
   return { admin, created: true };

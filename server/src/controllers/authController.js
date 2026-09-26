@@ -33,7 +33,10 @@ export async function login(req, res) {
   if (!isString(email) || !isString(password)) {
     throw new HttpError(400, 'ईमेल और पासवर्ड ज़रूरी हैं');
   }
-  const user = await User.findOne({ email: email.toLowerCase().trim() }).select('+password');
+  const id = email.toLowerCase().trim();
+  // Local-dev shortcut (see env.simpleAdmin): the ID "admin" means the seeded admin account.
+  const lookup = env.simpleAdmin && id === 'admin' ? env.adminEmail : id;
+  const user = await User.findOne({ email: lookup }).select('+password');
   if (!user || !(await user.matchesPassword(password))) {
     throw new HttpError(401, 'ईमेल या पासवर्ड गलत है');
   }

@@ -6,7 +6,7 @@ import * as articles from '../controllers/articleController.js';
 import * as categories from '../controllers/categoryController.js';
 import * as comments from '../controllers/commentController.js';
 import * as bookmarks from '../controllers/bookmarkController.js';
-import { dbMode } from '../config/db.js';
+import { isDbConnected } from '../config/db.js';
 import { langOf, translateMessage } from '../utils/i18n.js';
 
 const router = Router();
@@ -22,7 +22,11 @@ const authLimiter = rateLimit({
 
 const editorial = [protect, restrictTo('editor', 'admin')];
 
-router.get('/health', (_req, res) => res.json({ ok: true, db: dbMode }));
+// Used by hosts as a liveness/readiness probe: 503 when MongoDB is unreachable.
+router.get('/health', (_req, res) => {
+  const connected = isDbConnected();
+  res.status(connected ? 200 : 503).json({ ok: connected, db: connected ? 'connected' : 'disconnected' });
+});
 
 // auth
 router.post('/auth/register', authLimiter, auth.register);

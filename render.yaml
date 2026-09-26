@@ -1,10 +1,10 @@
-# Render Blueprint: one web service serving the API and the built React app.
+# Render Blueprint: the API only. The React site is deployed separately on Netlify (see netlify.toml).
 services:
   - type: web
-    name: navbharat24x7
+    name: navbharat24x7-api
     runtime: node
     plan: free
-    buildCommand: npm install --include=dev && npm run build
+    buildCommand: npm install -w server
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
@@ -12,10 +12,11 @@ services:
         value: production
       - key: NODE_VERSION
         value: 22
-      # Stable secret so logins survive restarts (generated once by Render).
+      # Render asks for these two when you create the service:
+      - key: MONGODB_URI # your Atlas string, with the real password and a database name
+        sync: false
+      - key: CLIENT_ORIGIN # your Netlify site URL, e.g. https://your-site.netlify.app (a placeholder is fine at first; update it later)
+        sync: false
+      # Generated once by Render and kept stable across restarts.
       - key: JWT_SECRET
         generateValue: true
-      # Render asks for this when you create the service: it is the admin login password.
-      - key: ADMIN_PASSWORD
-        sync: false
-      # Leave MONGODB_URI unset for now (embedded demo database). Add it later in the dashboard.

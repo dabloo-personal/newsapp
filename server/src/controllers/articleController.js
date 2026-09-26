@@ -72,7 +72,7 @@ export async function homeFeed(req, res) {
     return res.json({ hero: null, side: [], latest: [], trending: [], breaking: [], sections: [], spotlight: null });
   }
 
-  const side = await published({ _id: { $ne: hero._id } }, 2);
+  const side = await published({ _id: { $ne: hero._id } }, 3);
   const shown = [hero._id, ...side.map((a) => a._id)];
   const categories = await Category.find().sort({ order: 1 }).lean();
 

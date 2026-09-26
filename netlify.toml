@@ -7,8 +7,6 @@
 
 [build.environment]
   NODE_VERSION = "22"
-  # The workspace also contains the server; skip its ~77 MB embedded-MongoDB download here.
-  MONGOMS_DISABLE_POSTINSTALL = "1"
 
 # Single-page app: every path serves index.html so deep links (/article/…) work.
 [[redirects]]

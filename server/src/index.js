@@ -11,10 +11,6 @@ try {
   process.exit(1);
 }
 
-if (env.jwtSecretGenerated) {
-  console.warn('JWT_SECRET is not set: using a random secret, so logins end when the server restarts.');
-}
-
 const server = createApp().listen(env.port, () => {
   console.log(`API listening on http://localhost:${env.port}`);
 });
