@@ -201,6 +201,28 @@ label.check input { width: auto; }
 .editor-side { background: #fff; padding: 20px; border-top: 3px solid var(--ink); }
 .editor-preview { aspect-ratio: 16 / 9; height: auto; object-fit: cover; width: 100%; }
 
+/* Image uploader */
+.image-uploader { display: grid; gap: 10px; }
+.upload-dropzone { border: 2px dashed var(--line); padding: 22px 14px; text-align: center; border-radius: 6px; background: var(--paper); cursor: pointer; transition: background .2s, border-color .2s; }
+.upload-dropzone:hover { background: #ebf3eb; border-color: var(--coral); }
+.upload-dropzone p { margin: 8px 0 0; font-size: 13px; font-weight: 700; color: var(--ink); }
+.upload-dropzone small { color: var(--muted); font-size: 11px; display: block; margin-top: 3px; }
+.upload-icon { font-size: 30px; display: block; line-height: 1; }
+.image-preview-box { border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: #000; }
+.image-preview-actions { display: flex; gap: 8px; margin-top: 6px; }
+.image-preview-actions button { flex: 1; border: 1px solid var(--line); background: #fff; padding: 7px 10px; font-size: 12px; font-weight: 600; cursor: pointer; border-radius: 4px; color: var(--ink); }
+.image-preview-actions button:hover { background: var(--paper); color: var(--coral); }
+.url-toggle-btn { background: none; border: 0; color: var(--muted); font-size: 12px; cursor: pointer; text-decoration: underline; padding: 4px 0; text-align: left; }
+.url-toggle-btn:hover { color: var(--ink); }
+
+/* Translation button */
+.editor-header-flex { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-top: 1px solid var(--line); padding-top: 16px; margin-top: 10px; }
+.editor-header-flex .editor-heading { border-top: 0; padding-top: 0; margin: 0; }
+.translate-btn { display: inline-flex; align-items: center; gap: 6px; background: var(--ink); color: var(--lime); border: 0; padding: 8px 14px; font: 600 13px var(--sans); border-radius: 4px; cursor: pointer; transition: opacity .2s; }
+.translate-btn:hover { opacity: .9; }
+.translate-btn:disabled { opacity: .6; cursor: not-allowed; }
+
+
 @media (max-width: 1000px) {
   .card-grid { grid-template-columns: repeat(2, 1fr); }
   .trend-list { grid-template-columns: repeat(2, 1fr); }

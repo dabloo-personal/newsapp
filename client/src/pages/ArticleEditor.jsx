@@ -6,6 +6,7 @@ import { ErrorBox, Loading } from '../components/Feedback';
 import { fetchAdminArticle, resetEditor, saveArticle } from '../features/admin/adminSlice';
 import { showToast } from '../features/ui/uiSlice';
 import { useI18n } from '../i18n';
+import { translateHiToEn } from '../utils/translate';
 import { useTitle } from '../utils/useTitle';
 
 const EMPTY = {
@@ -40,6 +41,8 @@ export default function ArticleEditor() {
   const { editor, saving } = useSelector((s) => s.admin);
   const [form, setForm] = useState(EMPTY);
   const [error, setError] = useState('');
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [translating, setTranslating] = useState(false);
   useTitle(id ? t('खबर संपादित करें') : t('नई खबर'));
 
   useEffect(() => {
@@ -54,6 +57,41 @@ export default function ArticleEditor() {
 
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.type === 'checkbox' ? e.target.checked : e.target.value }));
   const setEn = (key) => (e) => setForm((f) => ({ ...f, en: { ...f.en, [key]: e.target.value } }));
+
+  const handleAutoTranslate = async () => {
+    if (!form.title && !form.summary && !form.body) {
+      dispatch(showToast(t('पहले हिंदी शीर्षक या खबर दर्ज करें')));
+      return;
+    }
+    setTranslating(true);
+    try {
+      const [enTitle, enSummary, enBody, enTags, enImageAlt] = await Promise.all([
+        translateHiToEn(form.title),
+        translateHiToEn(form.summary),
+        translateHiToEn(form.body),
+        form.tags ? translateHiToEn(form.tags) : Promise.resolve(''),
+        form.imageAlt ? translateHiToEn(form.imageAlt) : Promise.resolve(''),
+      ]);
+
+      setForm((f) => ({
+        ...f,
+        en: {
+          ...f.en,
+          title: enTitle || f.en.title,
+          summary: enSummary || f.en.summary,
+          body: enBody || f.en.body,
+          tags: enTags || f.en.tags,
+          imageAlt: enImageAlt || f.en.imageAlt,
+        },
+      }));
+      dispatch(showToast(t('अंग्रेज़ी संस्करण ऑटो-ट्रांसलेट हो गया!')));
+    } catch (err) {
+      console.error(err);
+      dispatch(showToast(t('ट्रांसलेशन विफल हुआ')));
+    } finally {
+      setTranslating(false);
+    }
+  };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -102,7 +140,17 @@ export default function ArticleEditor() {
             <small>{t('अनुच्छेद अलग करने के लिए एक खाली लाइन छोड़ें।')}</small>
           </label>
 
-          <h2 className="editor-heading">{t('अंग्रेज़ी संस्करण (वैकल्पिक)')}</h2>
+          <div className="editor-header-flex">
+            <h2 className="editor-heading">{t('अंग्रेज़ी संस्करण (वैकल्पिक)')}</h2>
+            <button
+              type="button"
+              className="translate-btn"
+              onClick={handleAutoTranslate}
+              disabled={translating}
+            >
+              {translating ? t('⏳ अनुवाद हो रहा है…') : t('✨ हिंदी से इंग्लिश ऑटो-ट्रांसलेट करें')}
+            </button>
+          </div>
           <p className="editor-hint">{t('खाली छोड़ने पर अंग्रेज़ी पाठकों को हिंदी संस्करण दिखेगा। भरें तो शीर्षक, सार और खबर तीनों ज़रूरी हैं।')}</p>
           <label>
             {t('अंग्रेज़ी शीर्षक')}
@@ -149,11 +197,92 @@ export default function ArticleEditor() {
             {t('लेखक')}
             <input value={form.authorName} onChange={set('authorName')} maxLength={80} />
           </label>
-          <label>
-            {t('इमेज लिंक')}
-            <input type="url" value={form.image} onChange={set('image')} placeholder="https://…" />
-          </label>
-          {form.image && <ArticleImage className="editor-preview" src={form.image} alt={t('प्रीव्यू')} />}
+
+          <div className="image-uploader">
+            <label className="field-label">{t('खबर की फोटो (इमेज)')}</label>
+            <input
+              type="file"
+              accept="image/*"
+              id="local-image-input"
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                  const img = new Image();
+                  img.onload = () => {
+                    const maxDim = 1200;
+                    let width = img.width;
+                    let height = img.height;
+                    if (width > maxDim || height > maxDim) {
+                      if (width > height) {
+                        height = Math.round((height * maxDim) / width);
+                        width = maxDim;
+                      } else {
+                        width = Math.round((width * maxDim) / height);
+                        height = maxDim;
+                      }
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    setForm((f) => ({ ...f, image: canvas.toDataURL('image/jpeg', 0.85) }));
+                  };
+                  img.src = ev.target.result;
+                };
+                reader.readAsDataURL(file);
+              }}
+            />
+
+            {!form.image ? (
+              <div
+                className="upload-dropzone"
+                onClick={() => document.getElementById('local-image-input')?.click()}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === 'Enter' && document.getElementById('local-image-input')?.click()}
+              >
+                <span className="upload-icon">📷</span>
+                <p>{t('कंप्यूटर से फोटो चुनें')}</p>
+                <small>{t('क्लिक करके लोकल डिवाइस से इमेज सेलेक्ट करें')}</small>
+              </div>
+            ) : (
+              <div className="image-preview-container">
+                <ArticleImage className="editor-preview" src={form.image} alt={t('प्रीव्यू')} />
+                <div className="image-preview-actions">
+                  <button type="button" onClick={() => document.getElementById('local-image-input')?.click()}>
+                    {t('दूसरी फोटो बदलें')}
+                  </button>
+                  <button type="button" onClick={() => setForm((f) => ({ ...f, image: '' }))}>
+                    {t('फोटो हटाएं')}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {showUrlInput ? (
+              <label style={{ marginTop: '8px' }}>
+                {t('या वेब इमेज का यूआरएल (URL)')}
+                <input
+                  type="url"
+                  value={form.image}
+                  onChange={set('image')}
+                  placeholder="https://…"
+                />
+              </label>
+            ) : (
+              <button
+                type="button"
+                className="url-toggle-btn"
+                onClick={() => setShowUrlInput(true)}
+              >
+                {t('या इमेज लिंक (URL) दर्ज करें')}
+              </button>
+            )}
+          </div>
           <label>
             {t('इमेज का विवरण')}
             <input value={form.imageAlt} onChange={set('imageAlt')} maxLength={200} />

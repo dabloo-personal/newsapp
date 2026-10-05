@@ -29,7 +29,7 @@ export function createApp() {
     })
   );
   app.use(cors({ origin: env.clientOrigins }));
-  app.use(express.json({ limit: '200kb' }));
+  app.use(express.json({ limit: '10mb' }));
   if (!env.isProd) app.use(morgan('dev'));
 
   app.use('/api', routes);

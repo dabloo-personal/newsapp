@@ -12,7 +12,7 @@ const files = [];
   for (const name of readdirSync(dir)) {
     const p = join(dir, name);
     if (statSync(p).isDirectory()) walk(p);
-    else if (/\.(jsx?|mjs)$/.test(name) && !/i18n\/en\.js$/.test(p)) files.push(p);
+    else if (/\.(jsx?|mjs)$/.test(name) && !/i18n[\\/]en\.js$/.test(p)) files.push(p);
   }
 })(root);
 
