@@ -138,6 +138,11 @@ export default function ArticleEditor() {
         form.imageAlt ? translateHiToEn(form.imageAlt) : Promise.resolve(''),
       ]);
 
+      if (!enTitle && !enSummary && !enBody) {
+        dispatch(showToast(t('ट्रांसलेशन विफल हुआ')));
+        return;
+      }
+
       setForm((f) => ({
         ...f,
         en: {
