@@ -123,6 +123,35 @@ export default function ArticleEditor() {
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.type === 'checkbox' ? e.target.checked : e.target.value }));
   const setEn = (key) => (e) => setForm((f) => ({ ...f, en: { ...f.en, [key]: e.target.value } }));
 
+  // Live auto-translate as user types in Hindi title, summary, or body
+  useEffect(() => {
+    if (!form.title && !form.summary && !form.body) return;
+
+    const timer = setTimeout(async () => {
+      try {
+        const [trTitle, trSummary, trBody] = await Promise.all([
+          form.title ? translateHiToEn(form.title) : Promise.resolve(''),
+          form.summary ? translateHiToEn(form.summary) : Promise.resolve(''),
+          form.body ? translateHiToEn(form.body) : Promise.resolve(''),
+        ]);
+
+        setForm((f) => ({
+          ...f,
+          en: {
+            ...f.en,
+            title: trTitle && trTitle !== f.title ? trTitle : f.en.title,
+            summary: trSummary && trSummary !== f.summary ? trSummary : f.en.summary,
+            body: trBody && trBody !== f.body ? trBody : f.en.body,
+          },
+        }));
+      } catch (err) {
+        console.warn('Live translate warning:', err);
+      }
+    }, 700);
+
+    return () => clearTimeout(timer);
+  }, [form.title, form.summary, form.body]);
+
   const handleAutoTranslate = async () => {
     if (!form.title && !form.summary && !form.body) {
       dispatch(showToast(t('पहले हिंदी शीर्षक या खबर दर्ज करें')));
