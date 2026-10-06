@@ -194,4 +194,5 @@ export default {
   'ट्रांसलेशन विफल हुआ': 'Translation failed',
   '⏳ अनुवाद हो रहा है…': '⏳ Translating…',
   '✨ हिंदी से इंग्लिश ऑटो-ट्रांसलेट करें': '✨ Auto-Translate Hindi to English',
+  'फोटो प्रोसेस हो रही है…': 'Processing image…',
 };

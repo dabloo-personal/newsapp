@@ -6,6 +6,7 @@ import * as articles from '../controllers/articleController.js';
 import * as categories from '../controllers/categoryController.js';
 import * as comments from '../controllers/commentController.js';
 import * as bookmarks from '../controllers/bookmarkController.js';
+import { translateText } from '../controllers/translateController.js';
 import { isDbConnected } from '../config/db.js';
 import { langOf, translateMessage } from '../utils/i18n.js';
 
@@ -55,5 +56,8 @@ router.delete('/comments/item/:id', protect, comments.deleteComment);
 // bookmarks
 router.get('/bookmarks', protect, bookmarks.listBookmarks);
 router.post('/bookmarks/:articleId', protect, bookmarks.toggleBookmark);
+
+// translate
+router.post('/translate', translateText);
 
 export default router;

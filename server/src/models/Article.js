@@ -6,8 +6,8 @@ const { Schema } = mongoose;
 export const STATUSES = ['draft', 'published'];
 
 const httpUrl = {
-  validator: (v) => !v || /^https?:\/\/\S+$/i.test(v),
-  message: 'इमेज लिंक http:// या https:// से शुरू होना चाहिए',
+  validator: (v) => !v || /^https?:\/\/\S+$/i.test(v) || /^data:image\/[a-zA-Z+-]+;base64,.+/i.test(v),
+  message: 'इमेज लिंक सही होना चाहिए (http://, https:// या डिवाइस की फोटो)',
 };
 
 const articleSchema = new Schema(

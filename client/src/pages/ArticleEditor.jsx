@@ -43,7 +43,72 @@ export default function ArticleEditor() {
   const [error, setError] = useState('');
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [translating, setTranslating] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   useTitle(id ? t('खबर संपादित करें') : t('नई खबर'));
+
+  const handleImageFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.onload = async () => {
+          const maxDim = 1200;
+          let width = img.width;
+          let height = img.height;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+          const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+          const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+
+          if (cloudName && uploadPreset) {
+            try {
+              const formData = new FormData();
+              formData.append('file', compressedDataUrl);
+              formData.append('upload_preset', uploadPreset);
+              const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+                method: 'POST',
+                body: formData,
+              });
+              const data = await res.json();
+              if (data.secure_url) {
+                setForm((f) => ({ ...f, image: data.secure_url }));
+                setUploadingImage(false);
+                return;
+              }
+            } catch (cErr) {
+              console.warn('Cloudinary upload fallback to compressed image:', cErr);
+            }
+          }
+
+          setForm((f) => ({ ...f, image: compressedDataUrl }));
+          setUploadingImage(false);
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error(err);
+      setUploadingImage(false);
+    }
+  };
 
   useEffect(() => {
     setForm(EMPTY);
@@ -205,39 +270,15 @@ export default function ArticleEditor() {
               accept="image/*"
               id="local-image-input"
               style={{ display: 'none' }}
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (ev) => {
-                  const img = new Image();
-                  img.onload = () => {
-                    const maxDim = 1200;
-                    let width = img.width;
-                    let height = img.height;
-                    if (width > maxDim || height > maxDim) {
-                      if (width > height) {
-                        height = Math.round((height * maxDim) / width);
-                        width = maxDim;
-                      } else {
-                        width = Math.round((width * maxDim) / height);
-                        height = maxDim;
-                      }
-                    }
-                    const canvas = document.createElement('canvas');
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-                    setForm((f) => ({ ...f, image: canvas.toDataURL('image/jpeg', 0.85) }));
-                  };
-                  img.src = ev.target.result;
-                };
-                reader.readAsDataURL(file);
-              }}
+              onChange={handleImageFileChange}
             />
 
-            {!form.image ? (
+            {uploadingImage ? (
+              <div className="upload-dropzone">
+                <span className="upload-icon">⏳</span>
+                <p>{t('फोटो प्रोसेस हो रही है…')}</p>
+              </div>
+            ) : !form.image ? (
               <div
                 className="upload-dropzone"
                 onClick={() => document.getElementById('local-image-input')?.click()}

@@ -7,7 +7,22 @@ export async function translateHiToEn(text) {
 
   const cleanText = text.trim();
 
-  // Try Google GTX endpoint first
+  // 1. Try backend proxy API first (CORS safe, works on live servers)
+  try {
+    const res = await fetch('/api/translate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: cleanText, from: 'hi', to: 'en' }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.text) return data.text;
+    }
+  } catch (err) {
+    console.warn('Backend translate API failed, trying client-side fallback:', err);
+  }
+
+  // 2. Fallback to direct Google GTX endpoint
   try {
     const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=hi&tl=en&dt=t&q=${encodeURIComponent(cleanText)}`;
     const res = await fetch(url);
@@ -19,10 +34,10 @@ export async function translateHiToEn(text) {
       }
     }
   } catch (err) {
-    console.warn('Google GTX translate failed, trying fallback:', err);
+    console.warn('Google GTX translate failed, trying MyMemory fallback:', err);
   }
 
-  // Fallback to MyMemory
+  // 3. Fallback to MyMemory
   try {
     const myMemoryUrl = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(cleanText)}&langpair=hi|en`;
     const res = await fetch(myMemoryUrl);
