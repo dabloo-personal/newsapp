@@ -51,3 +51,19 @@ export async function translateHiToEn(text) {
 
   return '';
 }
+
+export async function translateArticleBatch(fields) {
+  if (!fields || typeof fields !== 'object') return null;
+
+  try {
+    const data = await api('/translate', {
+      method: 'POST',
+      body: { fields, from: 'hi', to: 'en' },
+    });
+    if (data?.translated) return data.translated;
+  } catch (err) {
+    console.warn('Batch translate API failed, falling back to individual calls:', err);
+  }
+
+  return null;
+}

@@ -6,7 +6,7 @@ import { ErrorBox, Loading } from '../components/Feedback';
 import { fetchAdminArticle, resetEditor, saveArticle } from '../features/admin/adminSlice';
 import { showToast } from '../features/ui/uiSlice';
 import { useI18n } from '../i18n';
-import { translateHiToEn } from '../utils/translate';
+import { translateArticleBatch, translateHiToEn } from '../utils/translate';
 import { useTitle } from '../utils/useTitle';
 
 const EMPTY = {
@@ -130,13 +130,31 @@ export default function ArticleEditor() {
     }
     setTranslating(true);
     try {
-      const [enTitle, enSummary, enBody, enTags, enImageAlt] = await Promise.all([
-        translateHiToEn(form.title),
-        translateHiToEn(form.summary),
-        translateHiToEn(form.body),
-        form.tags ? translateHiToEn(form.tags) : Promise.resolve(''),
-        form.imageAlt ? translateHiToEn(form.imageAlt) : Promise.resolve(''),
-      ]);
+      const fieldsToTranslate = {
+        title: form.title || '',
+        summary: form.summary || '',
+        body: form.body || '',
+        tags: form.tags || '',
+        imageAlt: form.imageAlt || '',
+      };
+
+      const batchResult = await translateArticleBatch(fieldsToTranslate);
+
+      let enTitle = batchResult?.title;
+      let enSummary = batchResult?.summary;
+      let enBody = batchResult?.body;
+      let enTags = batchResult?.tags;
+      let enImageAlt = batchResult?.imageAlt;
+
+      if (!batchResult) {
+        [enTitle, enSummary, enBody, enTags, enImageAlt] = await Promise.all([
+          translateHiToEn(form.title),
+          translateHiToEn(form.summary),
+          translateHiToEn(form.body),
+          form.tags ? translateHiToEn(form.tags) : Promise.resolve(''),
+          form.imageAlt ? translateHiToEn(form.imageAlt) : Promise.resolve(''),
+        ]);
+      }
 
       if (!enTitle && !enSummary && !enBody) {
         dispatch(showToast(t('ट्रांसलेशन विफल हुआ')));
