@@ -156,7 +156,7 @@ export default function ArticleEditor() {
         ]);
       }
 
-      if (!enTitle && !enSummary && !enBody) {
+      if ((!enTitle && !enSummary && !enBody) || (form.title && enTitle === form.title && form.body && enBody === form.body)) {
         dispatch(showToast(t('ट्रांसलेशन विफल हुआ')));
         return;
       }
