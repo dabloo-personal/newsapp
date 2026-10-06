@@ -28,7 +28,16 @@ export function createApp() {
       },
     })
   );
-  app.use(cors({ origin: env.clientOrigins }));
+  const corsOptions = {
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (env.clientOrigins.includes('*') || env.clientOrigins.includes(origin)) return callback(null, true);
+      if (/\.netlify\.app$/i.test(new URL(origin).hostname) || /localhost|127\.0\.0\.1/i.test(origin)) return callback(null, true);
+      return callback(null, true);
+    },
+    credentials: true,
+  };
+  app.use(cors(corsOptions));
   app.use(express.json({ limit: '10mb' }));
   if (!env.isProd) app.use(morgan('dev'));
 

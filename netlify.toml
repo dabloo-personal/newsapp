@@ -8,6 +8,12 @@
 [build.environment]
   NODE_VERSION = "22"
 
+# Proxy /api requests to Render backend API so CORS is eliminated and VITE_API_URL is automatic
+[[redirects]]
+  from = "/api/*"
+  to = "https://navbharat24x7-api.onrender.com/api/:splat"
+  status = 200
+
 # Single-page app: every path serves index.html so deep links (/article/…) work.
 [[redirects]]
   from = "/*"

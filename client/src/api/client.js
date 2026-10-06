@@ -1,7 +1,7 @@
 import { translate } from '../i18n';
 import { getLang } from '../i18n/lang';
 
-const BASE = import.meta.env.VITE_API_URL || '/api';
+const BASE = (import.meta.env.VITE_API_URL || '/api').trim().replace(/\/+$/, '');
 const TOKEN_KEY = 'nb_token';
 
 export const getToken = () => {
@@ -29,7 +29,9 @@ export class ApiError extends Error {
 }
 
 export async function api(path, { method = 'GET', body, params, signal } = {}) {
-  const url = new URL(BASE + path, window.location.origin);
+  const cleanPath = path.startsWith('/') ? path : '/' + path;
+  const targetUrl = BASE.startsWith('http') ? BASE + cleanPath : window.location.origin + BASE + cleanPath;
+  const url = new URL(targetUrl);
   url.searchParams.set('lang', getLang());
   Object.entries(params ?? {}).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== '') url.searchParams.set(key, value);
