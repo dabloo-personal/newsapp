@@ -75,8 +75,8 @@ export default function ArticleEditor() {
           ctx.drawImage(img, 0, 0, width, height);
           const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
 
-          const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-          const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+          const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'ezj0mde9';
+          const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'efgh0aig';
 
           if (cloudName && uploadPreset) {
             try {
@@ -94,8 +94,21 @@ export default function ArticleEditor() {
                 return;
               }
             } catch (cErr) {
-              console.warn('Cloudinary upload fallback to compressed image:', cErr);
+              console.warn('Direct Cloudinary upload failed, attempting server upload fallback:', cErr);
             }
+          }
+
+          // Fallback to server-side upload via Render backend API
+          try {
+            const { api } = await import('../api/client.js');
+            const res = await api.post('/upload', { file: compressedDataUrl });
+            if (res.data?.url) {
+              setForm((f) => ({ ...f, image: res.data.url }));
+              setUploadingImage(false);
+              return;
+            }
+          } catch (sErr) {
+            console.warn('Server upload fallback failed, using compressed local image:', sErr);
           }
 
           setForm((f) => ({ ...f, image: compressedDataUrl }));

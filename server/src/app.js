@@ -19,11 +19,11 @@ export function createApp() {
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
-          imgSrc: ["'self'", 'data:', 'https:'],
+          imgSrc: ["'self'", 'data:', 'https:', 'blob:'],
           styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
           fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-          scriptSrc: ["'self'"],
-          connectSrc: ["'self'"],
+          scriptSrc: ["'self'", "'unsafe-inline'", 'https://translate.googleapis.com'],
+          connectSrc: ["'self'", 'https://api.cloudinary.com', 'https://*.cloudinary.com', 'https://translate.googleapis.com', 'https://*.googleapis.com'],
         },
       },
     })

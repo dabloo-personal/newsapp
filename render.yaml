@@ -1,10 +1,10 @@
-# Render Blueprint: the API only. The React site is deployed separately on Netlify (see netlify.toml).
+# Render Blueprint: Fullstack (API + React client)
 services:
   - type: web
     name: navbharat24x7-api
     runtime: node
     plan: free
-    buildCommand: npm install -w server
+    buildCommand: npm install && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
@@ -15,8 +15,16 @@ services:
       # Render asks for these two when you create the service:
       - key: MONGODB_URI # your Atlas string, with the real password and a database name
         sync: false
-      - key: CLIENT_ORIGIN # your Netlify site URL, e.g. https://your-site.netlify.app (a placeholder is fine at first; update it later)
-        sync: false
+      - key: CLIENT_ORIGIN # allowed frontend origins or *
+        value: '*'
+      - key: CLOUDINARY_CLOUD_NAME
+        value: ezj0mde9
+      - key: CLOUDINARY_UPLOAD_PRESET
+        value: efgh0aig
+      - key: VITE_CLOUDINARY_CLOUD_NAME
+        value: ezj0mde9
+      - key: VITE_CLOUDINARY_UPLOAD_PRESET
+        value: efgh0aig
       # Generated once by Render and kept stable across restarts.
       - key: JWT_SECRET
         generateValue: true

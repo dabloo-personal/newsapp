@@ -7,6 +7,7 @@ import * as categories from '../controllers/categoryController.js';
 import * as comments from '../controllers/commentController.js';
 import * as bookmarks from '../controllers/bookmarkController.js';
 import { translateText } from '../controllers/translateController.js';
+import { uploadImage } from '../controllers/uploadController.js';
 import { isDbConnected } from '../config/db.js';
 import { langOf, translateMessage } from '../utils/i18n.js';
 
@@ -59,5 +60,8 @@ router.post('/bookmarks/:articleId', protect, bookmarks.toggleBookmark);
 
 // translate
 router.post('/translate', translateText);
+
+// upload
+router.post('/upload', ...editorial, uploadImage);
 
 export default router;
